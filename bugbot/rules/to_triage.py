@@ -91,19 +91,27 @@ class ToTriage(BzCleaner, Nag):
             "f2": "bug_severity",
             "o2": "anyexact",
             "v2": "--, n/a",
-            "f3": "flagtypes.name",
-            "o3": "notsubstring",
-            "v3": "needinfo?",
-            "f4": "setters.login_name",
-            "o4": "notequals",
-            "v4": "release-mgmt-account-bot@mozilla.tld",
-            "f5": "flagtypes.name",
-            "o5": "substring",
-            "v5": "needinfo?",
-            "n5": "1",
+            # "f3": "flagtypes.name",
+            # "o3": "notsubstring",
+            # "v3": "needinfo?",
+            # Chart 0 - Exclude bugs with the needinfo flag
+            "f3-0-0": "flagtypes.name",
+            "o3-0-0": "notsubstring",
+            "v3-0-0": "needinfo?",
+            # Chart 1 - Include bugs with the needinfo flag set by the bot
+            # "f4-0-0": "flagtypes.name",
+            # "o4-0-0": "notsubstring",
+            # "v4-0-0": "needinfo?",
+            # "f4-1-0": "setters.login_name",
+            # "o4-1-0": "equals",
+            # "v4-1-0": "release-mgmt-account-bot@mozilla.tld",
         }
 
         return params
+
+    def get_bugs(self, date="today", bug_ids=[], chunk_size=None):
+        bugs = super().get_bugs(date="today")
+        print(f"Found {len(bugs)} bugs")
 
 
 if __name__ == "__main__":
