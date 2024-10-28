@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from libmozdata import utils as lmdutils
+from libmozdata.bugzilla import Bugzilla
 
 from bugbot import logger, utils
 from bugbot.bzcleaner import BzCleaner
@@ -10,6 +11,7 @@ from bugbot.escalation import Escalation
 from bugbot.nag_me import Nag
 from bugbot.round_robin import RoundRobin
 from bugbot.round_robin_calendar import BadFallback, InvalidCalendar
+from bugbot.utils import get_config
 
 
 class ToTriage(BzCleaner, Nag):
@@ -70,6 +72,43 @@ class ToTriage(BzCleaner, Nag):
         if not self.add(owners, buginfo, priority=priority, fallback=fallback):
             self.add_no_manager(buginfo["id"])
         return bug
+
+    def filter_bugs_by_bot_ni(self, bugs):
+        bugs_with_bot_ni = {}
+
+        def bug_handler(bug, data):
+            bugid = str(bug["id"])
+
+            needinfos = [
+                {
+                    "requestee": flag["requestee"],
+                    "setter": flag["setter"],
+                    "type": flag["name"],
+                }
+                for flag in bug.get("flags", [])
+                if flag["name"] == "needinfo"
+            ]
+
+            has_bot_ni = any(
+                ni["setter"] == get_config("common", "bot_bz_mail") for ni in needinfos
+            )
+
+            if has_bot_ni:
+                data[bugid] = bugs[bugid]
+
+        Bugzilla(
+            bugids=list(bugs.keys()),
+            include_fields=["id", "flags"],
+            bughandler=bug_handler,
+            bugdata=bugs_with_bot_ni,
+        ).get_data().wait()
+
+        return bugs_with_bot_ni
+
+    def get_bugs(self, date="today", bug_ids=[]):
+        bugs = super(ToTriage, self).get_bugs(date=date, bug_ids=bug_ids)
+        bugs = self.filter_bugs_by_bot_ni(bugs)
+        return bugs
 
     def get_bz_params(self, date):
         self.date = lmdutils.get_date_ymd(date)
