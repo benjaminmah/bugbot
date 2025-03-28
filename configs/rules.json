@@ -478,5 +478,17 @@
   },
   "perfalert_resolved_regression": {
     "additional_receivers": ["perfalert-activity@mozilla.com", "sparky@mozilla.com"]
+  },
+  "site_scout_missing_triage": {
+    "weeks-lookup": 4,
+    "must_run": ["Mon", "Thu"],
+    "escalation": {
+      "default": {
+        "[0;+∞[": {
+          "supervisor": "n+1",
+          "days": ["Mon", "Thu"]
+        }
+      }
+    }
   }
 }
